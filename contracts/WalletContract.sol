@@ -26,6 +26,7 @@ contract wallet {
             amount <= accountBalance[msg.sender],
             "You do not have sufficient balance to tranfer"
         );
+        accountBalance[msg.sender]-= amount;
         receivingAddress.transfer(amount);
     }
 

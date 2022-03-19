@@ -4,14 +4,14 @@ import abi from "./contract/wallet.json";
 
 function App() {
   const [isWalletConnected, setIsWalletConnected] = useState(false);
-  const [isOwner, setIsOwner] = useState(false);
-  const [inputValue, setInputValue] = useState({ withdraw: "", deposit: "", balance: "" });
+  // const [isOwner, setIsOwner] = useState(false);
+  const [inputValue, setInputValue] = useState({ transferAmount: "", transferAddress: "", deposit: "", balance: "" });
   const [OwnerAddress, setOwnerAddress] = useState(null);
   const [TotalBalance, setTotalBalance] = useState(null);
   const [receiveAddress, setReceiverAddress] = useState(null);
   const [error, setError] = useState(null);
 
-  const contractAddress = '0x0d9494732Ae5997c46B177a2165926691bd6B930';
+  const contractAddress = '0x1D8379999fd6B09499f1ed212eF306a5d8fC1c94';
   const contractABI = abi.abi;
 
   const checkIfWalletIsConnected = async () => {
@@ -23,7 +23,7 @@ function App() {
         setReceiverAddress(account);
         console.log("Account Connected: ", account);
       } else {
-        setError("Please install a MetaMask wallet to use our wallet.");
+        setError("Please install a MetaMask wallet to use the wallet.");
         console.log("No Metamask detected");
       }
     } catch (error) {
@@ -39,17 +39,17 @@ function App() {
         const signer = provider.getSigner();
         const walletContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-        let owner = await walletContract.walletOwner();
+        let owner = await walletContract.owner();
         setOwnerAddress(owner);
 
         const [account] = await window.ethereum.request({ method: 'eth_requestAccounts' });
 
-        if (owner.toLowerCase() === account.toLowerCase()) {
-          setIsOwner(true);
-        }
+        // if (owner.toLowerCase() === account.toLowerCase()) {
+        //   setIsOwner(true);
+        // }
       } else {
         console.log("Ethereum object not found, install Metamask.");
-        setError("Please install a MetaMask wallet to use our bank.");
+        setError("Please install a MetaMask wallet to use the wallet.");
       }
     } catch (error) {
       console.log(error)
@@ -63,13 +63,13 @@ function App() {
         const signer = provider.getSigner();
         const walletContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-        let balance = await walletContract.getCustomerBalance();
+        let balance = await walletContract.getBalance();
         setTotalBalance(utils.formatEther(balance));
         console.log("Retrieved balance...", balance);
 
       } else {
         console.log("Ethereum object not found, install Metamask.");
-        setError("Please install a MetaMask wallet to use our bank.");
+        setError("Please install a MetaMask wallet to use the wallet.");
       }
     } catch (error) {
       console.log(error)
@@ -84,7 +84,7 @@ function App() {
         const signer = provider.getSigner();
         const walletContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-        const txn = await walletContract.depositMoney({ value: ethers.utils.parseEther(inputValue.deposit) });
+        const txn = await walletContract.deposit({ value: ethers.utils.parseEther(inputValue.deposit) });
         console.log("Deposting money...");
         await txn.wait();
         console.log("Deposited money...done", txn.hash);
@@ -108,13 +108,10 @@ function App() {
         const signer = provider.getSigner();
         const walletContract = new ethers.Contract(contractAddress, contractABI, signer);
 
-        let myAddress = await signer.getAddress()
-        console.log("provider signer...", myAddress);
-
-        const txn = await walletContract.withDrawMoney(myAddress, ethers.utils.parseEther(inputValue.withdraw));
-        console.log("Withdrawing money...");
+        const txn = await walletContract.transfer(inputValue.transferAddress, ethers.utils.parseEther(inputValue.transferAmount));
+        console.log("Transfering money...");
         await txn.wait();
-        console.log("Money with drew...done", txn.hash);
+        console.log("Money transfer", txn.hash);
 
         customerBalanceHanlder();
 
@@ -145,7 +142,7 @@ function App() {
         <div className="mt-7 mb-9">
           <form className="form-style">
             <input
-              type="text"
+              type="number"
               className="input-style"
               onChange={handleInputChange}
               name="deposit"
@@ -160,12 +157,20 @@ function App() {
         <div className="mt-10 mb-10">
           <form className="form-style">
             <input
+              type="number"
+              className="input-style"
+              onChange={handleInputChange}
+              name="transferAmount"
+              placeholder="0.0000 ETH"
+              value={inputValue.transferAmount}
+            />
+            <input
               type="text"
               className="input-style"
               onChange={handleInputChange}
-              name="withdraw"
-              placeholder="0.0000 ETH"
-              value={inputValue.withdraw}
+              name="transferAddress"
+              placeholder="0x..."
+              value={inputValue.transferAddress}
             />
             <button
               className="btn-purple"
